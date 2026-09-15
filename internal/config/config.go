@@ -9,7 +9,7 @@ import (
 )
 
 type HTTPServer struct {
-	Address string
+	Address string `yaml:"address" env-required:"true"`
 }
 
 type Config struct {
@@ -42,7 +42,7 @@ func MustLoad() *Config {
 	var cfg Config 
 
 	err := cleanenv.ReadConfig(configPath, &cfg)
-	
+
 	if err != nil {
 		log.Fatalf("cannnot read config file: %s", err.Error())
 	}
