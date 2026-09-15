@@ -9,21 +9,22 @@ import (
 	"net/http"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/saksham365/students-api/internal/storage"
 	"github.com/saksham365/students-api/internal/types"
 	"github.com/saksham365/students-api/internal/utils/response"
 )
 
-func New() http.HandlerFunc{
+func New(storage storage.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		var student types.Student 
+		var student types.Student
 
 		slog.Info("creating a student")
 
 		err := json.NewDecoder(r.Body).Decode(&student)
 		if errors.Is(err, io.EOF) {
 			response.WriteJSON(w, http.StatusBadRequest, response.GeneralError(fmt.Errorf("empty body")))
-			return 
+			return
 		}
 
 		if err != nil {
@@ -38,6 +39,20 @@ func New() http.HandlerFunc{
 			return
 		}
 
-		response.WriteJSON(w, http.StatusCreated, map[string] string{"success": "OK"})
+		lastId, err := storage.CreateStudent(
+			student.Name,
+			student.Age,
+			student.Class,
+			student.Email,
+		)
+
+		slog.Info("user created successfully", slog.String("userId", fmt.Sprint(lastId)))
+
+		if err != nil {
+			response.WriteJSON(w, http.StatusInternalServerError, err)
+			return 
+		}
+
+		response.WriteJSON(w, http.StatusCreated, map[string]int64{"id": lastId})
 	}
 }
